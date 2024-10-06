@@ -1,0 +1,196 @@
+.profileContainer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    background-color: #f7f7f7;
+    border-radius: 10px;
+    overflow: hidden;
+    gap: 20px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .coverContainer {
+    position: relative;
+    flex: 1;
+  }
+  
+  .coverPhoto {
+    width: 100%;
+    height: 200px;
+    position: relative;
+  }
+  
+  .coverImage {
+    border-radius: 10px 10px 0px 0px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  
+  .profilePhoto {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid white;
+    overflow: hidden;
+    position: absolute;
+    left: 20px; 
+    transform: translateY(-50%);
+  }
+  
+  .profileImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .profileInfo {
+    flex: 2;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 50px;
+    padding: 20px;
+    background-color: #f7f7f7;
+  }
+  
+  .profileDetails {
+    text-align: left;
+    /* margin-left: 160px; Ensures space for profile photo */
+    text-wrap: nowrap;
+  }
+  
+  .profileDetails h2 {
+    margin-bottom: 10px;
+    color: #232f66;
+  }
+  
+  .bookingAvailability {
+    margin-top: 10px;
+    text-align: left;
+    width: 100%;
+  }
+  
+  .bookNowBtn {
+    background-color: #232f66;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .bookNowBtn:hover {
+    background-color: #006bb2;
+  }
+  
+  @media (max-width: 1024px) {
+    .profileContainer {
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+    }
+  
+    .coverContainer {
+      width: 100%;
+    }
+  
+    .profilePhoto {
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+  
+    .profileInfo {
+        display: flex;
+        flex-direction: row;
+      margin-top: 60px; 
+      padding: 10px;
+    }
+  
+    .profileDetails {
+      margin-left: 0;
+    }
+  
+    .bookNowBtn {
+      width: 80%;
+      margin: 10px auto;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .coverImage {
+      height: 150px;
+    }
+  
+    .profilePhoto {
+      width: 100px;
+      height: 100px;
+    }
+  
+    .profileInfo {
+      padding: 10px;
+    }
+  
+    .bookNowBtn {
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .profileContainer {
+      padding: 5px;
+    }
+  
+    .profilePhoto {
+      width: 80px;
+      height: 80px;
+    }
+  
+    .profileDetails h2 {
+      font-size: 18px;
+    }
+  
+    .bookingAvailability {
+      font-size: 14px;
+    }
+  
+    .bookNowBtn {
+      padding: 6px 12px;
+      font-size: 12px;
+    }
+  }
+
+  .name {
+    color: #333; /* Dark color for the heading */
+    font-size: 24px; /* Larger font size for the name */
+    margin-bottom: 15px; /* Spacing below the heading */
+  }
+  
+  .text {
+    color: #666; /* Slightly lighter color for the text */
+    font-size: 16px; /* Standard font size for text */
+    margin-bottom: 10px; /* Spacing between paragraphs */
+  }
+  
+  .statisticsList {
+    list-style: none; /* Removing default list styling */
+    padding: 0; /* Removing default padding */
+    margin: 0; /* Removing default margin */
+  }
+  
+  .statisticsItem {
+    background-color: #fff; /* White background for list items */
+    border: 1px solid #ddd; /* Light border for separation */
+    border-radius: 4px; /* Rounded corners for list items */
+    padding: 10px; /* Padding inside list items */
+    margin-bottom: 5px; /* Spacing between list items */
+  }
+  
+  .icon {
+    vertical-align: middle; /* Align icons with text */
+    margin-right: 8px; /* Spacing between icon and text */
+  }
+  
