@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import useAuth from "../../../hooks/useAuth";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Importing eye icons
+import { apiClient } from "../../../api/api-client.ts";
 
 const RegisterPage = () => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -157,7 +158,8 @@ const RegisterPage = () => {
       };
 
       try {
-        await axios.post(`http://localhost:5000/api/patient/signup`, patient);
+        await apiClient.post(`/auth/patients/sign-up`, patient);
+        console.log();
         setMessage("Registration successful! Confirm Your Email and Login");
         // Clear form fields
         setName("");

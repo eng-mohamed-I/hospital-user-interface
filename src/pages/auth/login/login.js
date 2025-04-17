@@ -3,6 +3,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import useAuth from "../../../hooks/useAuth";
+import { apiClient } from "../../../api/api-client.ts";
+//======================================================
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -22,7 +24,7 @@ const LoginPage = () => {
       navigate("/"); // Navigate if user is authenticated
     }
   }, [auth, navigate]);
-  
+
   const validateEmail = (email) => {
     if (!email) {
       return "Email is required";
@@ -64,10 +66,10 @@ const LoginPage = () => {
 
     if (!emailError && !passwordError) {
       try {
-        const response = await axios.post(
-          "http://localhost:5000/api/patient/signin",
-          { email: email, password: password }
-        );
+        const response = await apiClient.post("/auth/patients/sign-in", {
+          email: email,
+          password: password,
+        });
         let { token, message, data } = response.data;
         setMessage(message || "Login successfull!");
         localStorage.setItem(
@@ -75,17 +77,16 @@ const LoginPage = () => {
           JSON.stringify({ token: token, data: data })
         );
 
-        setMessage(response.response.data.message || "Login Faild");
-        
+        // setMessage(response.response.data.message || "Login Faild");
+
         setTimeout(() => {
           setAuth({ user: { token: token, data: data } });
           navigate("/");
         }, 2000);
       } catch (err) {
-        
         if (err.response && err.response.data) {
           let { messgae } = err.response.data;
-          
+
           setMessage(messgae || "Login Faild");
         }
       }
@@ -207,7 +208,10 @@ const LoginPage = () => {
               </button>
             </div>
             <div className="text-center mt-3">
-              <Link to="/forgotpassword" style={{ textDecoration: "none", color: "#dea94d" }}>
+              <Link
+                to="/forgotpassword"
+                style={{ textDecoration: "none", color: "#dea94d" }}
+              >
                 Forgot password?
               </Link>
             </div>
@@ -227,7 +231,7 @@ const LoginPage = () => {
         </div>
       </div>
 
-      <style jsx='true'>{`
+      <style jsx="true">{`
         .fade-in {
           opacity: 0;
           animation: fadeIn 1s forwards;

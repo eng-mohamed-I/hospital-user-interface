@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import useAuth from "../../../hooks/useAuth";
 import axios from "axios";
-
+import { apiClient } from "../../../api/api-client.ts";
+//======================================================
 const PatientSetting = () => {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -63,8 +64,8 @@ const PatientSetting = () => {
     if (!errors.emailError && !errors.nameError && !errors.phoneError) {
       let token = auth?.user?.token;
       try {
-        const response = await axios.post(
-          `http://localhost:5000/api/patient/updatePatient/${token}`,
+        const response = await apiClient.post(
+          `/auth/patients/update-patient/${token}`,
           { email, name, phone }
         );
         setSuccessMessage(response.data.message);
