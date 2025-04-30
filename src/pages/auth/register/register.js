@@ -3,9 +3,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import useAuth from "../../../hooks/useAuth";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Importing eye icons
-import { apiClient } from "../../../api/api-client.ts";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { apiClient } from "../../../api/api-client";
+//====================================================
 const RegisterPage = () => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [name, setName] = useState("");

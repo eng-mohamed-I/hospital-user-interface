@@ -5,7 +5,10 @@ import { Toast } from "primereact/toast";
 import styles from "./BookAppointment.module.css";
 import useAuth from "../../hooks/useAuth";
 import { generateTimeSlots } from "../../utilities/api";
-
+import { handleGetDoctor } from "../../services/doctors/doctor-service";
+import { handleGetDepartments } from "../../services/department/department-service";
+import { handleMakeAppointment } from "../../services/appointment/appointment-service";
+//========================================================
 const BookAppointment = ({ fromLanding }) => {
   const { id } = useParams();
   const [doctor, setDoctor] = useState(null);
@@ -14,70 +17,25 @@ const BookAppointment = ({ fromLanding }) => {
   const [doctors, setDoctors] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
   const [timeSlots, setTimeSlots] = useState([]);
+  const [formError, setFormError] = useState("");
   const [formData, setFormData] = useState({
     doctorId: "",
     department: "",
     appointmentDate: "",
     time: "",
-    phone:""
+    phone: "",
   });
-  const [formError, setFormError] = useState("");
+
+  const navigate = useNavigate();
   const toast = useRef(null);
   const { auth } = useAuth();
   const doctorId = id;
-  const navigate = useNavigate();
-  // Fetch all departments
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const res = await axios.get("http://localhost:5000/api/departments");
-        const allDepartments = res.data?.departments || [];
 
-        // Filter departments with available doctors
-        const departmentsWithDoctors = await Promise.all(
-          allDepartments.map(async (dept) => {
-            const doctorRes = await axios.get(
-              `http://localhost:5000/api/doctors?department=${dept.name}`
-            );
-            if (doctorRes.data.length > 0) {
-              return dept; // Return the department if it has doctors
-            }
-            return null; // Return null if it doesn't
-          })
-        );
-
-        // Set state with valid departments only
-        setDepartments(departmentsWithDoctors.filter(Boolean));
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchDepartments();
-  }, []);
-
-  // Handle case where doctorId is present
   useEffect(() => {
     if (doctorId) {
-      const fetchDoctor = async () => {
-        try {
-          const res = await axios.get(
-            `http://localhost:5000/api/doctors/${doctorId}`
-          );
-          const doctorData = res.data;
-          setDoctor(doctorData);
-          setAvailableDates(doctorData.availableDates);
-          setFormData({
-            ...formData,
-            doctorId: doctorData._id,
-            department: doctorData.department.name,
-          });
-        } catch (error) {
-          console.error(error);
-        }
-      };
-
-      fetchDoctor();
+      fetchDoctor(doctorId);
+    } else {
+      fetchDepartments();
     }
   }, [doctorId]);
 
@@ -86,27 +44,68 @@ const BookAppointment = ({ fromLanding }) => {
     if (selectedDepartment) {
       axios
         .get(
-          `http://localhost:5000/api/doctors?department=${selectedDepartment}`
+          `http://localhost:5000/api/v1/auth/doctors?department=${selectedDepartment}`
         )
         .then((res) => setDoctors(res.data))
         .catch((err) => console.log(err));
     }
   }, [selectedDepartment]);
 
-  // Handle doctor selection to fetch doctor details
-  const handleDoctorChange = (id) => {
-    setFormData({ ...formData, doctorId: id });
-    axios
-      .get(`http://localhost:5000/api/doctors/${id}`)
-      .then((res) => {
-        setDoctor(res.data);
-        setAvailableDates(res.data.availableDates);
-      })
-      .catch((err) => console.log(err));
+  const fetchDoctor = async (doctorId) => {
+    try {
+      const data = await handleGetDoctor(doctorId);
+      const doctorData = data;
+      setDoctor(doctorData);
+      setAvailableDates(doctorData.availableDates);
+      setFormData({
+        ...formData,
+        doctorId: doctorData._id,
+        department: doctorData.department.name,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const data = await handleGetDepartments();
+      const allDepartments = data?.departments;
+      setDepartments(allDepartments);
+
+      // Filter departments with available doctors
+      // const departmentsWithDoctors = await Promise.all(
+      //   allDepartments.map(async (dept) => {
+      //     const doctorRes = await axios.get(
+      //       `http://localhost:5000/api/v1/auth/doctors?department=${dept.name}`
+      //     );
+      //     if (doctorRes.data.length > 0) {
+      //       return dept; // Return the department if it has doctors
+      //     }
+      //     return null; // Return null if it doesn't
+      //   })
+      // );
+
+      // // Set state with valid departments only
+      // setDepartments(departmentsWithDoctors.filter(Boolean));
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleDoctorChange = async (id) => {
+    try {
+      setFormData({ ...formData, doctorId: id });
+      const data = await handleGetDoctor(id);
+      setDoctor(data);
+      setAvailableDates(data.availableDates);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const handleDateChange = (date) => {
-    const selectedDate = availableDates.find(d => d.date === date);
+    const selectedDate = availableDates.find((d) => d.date === date);
     if (selectedDate) {
       const { fromTime, toTime } = selectedDate; // Get fromTime and toTime
       const start = convertTimeToMinutes(fromTime); // Convert fromTime to minutes
@@ -116,12 +115,13 @@ const BookAppointment = ({ fromLanding }) => {
       setFormData({ ...formData, appointmentDate: date, time: "" }); // Reset time selection
     }
   };
+
   const convertTimeToMinutes = (timeString) => {
-    const [hours, minutes] = timeString.split(':').map(Number);
+    const [hours, minutes] = timeString.split(":").map(Number);
     return hours * 60 + minutes; // Convert time to total minutes
   };
-  // Handle form submission
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     if (!auth?.user?.data?.email) {
       navigate("/signin");
     }
@@ -133,39 +133,40 @@ const BookAppointment = ({ fromLanding }) => {
       return;
     }
 
-    axios
-      .post("http://localhost:5000/api/appointments/book", {
+    try {
+      await handleMakeAppointment({
         doctorID: doctorId,
         department,
         date: appointmentDate,
         time,
         patientEmail: auth?.user?.data?.email,
-      })
-      .then(() => {
-        toast.current.show({
-          severity: "success",
-          summary: "Success",
-          detail: "Appointment booked successfully!",
-          life: 3000,
-        });
-        setFormData({
-          doctorId: "",
-          department: "",
-          appointmentDate: "",
-          time: "",
-          phone:""
-        });
-        setFormError("");
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: err?.response?.data.message,
-          life: 3000,
-        });
       });
+
+      toast.current.show({
+        severity: "success",
+        summary: "Success",
+        detail: "Appointment booked successfully!",
+        life: 3000,
+      });
+
+      setFormData({
+        doctorId: "",
+        department: "",
+        appointmentDate: "",
+        time: "",
+        phone: "",
+      });
+      
+      setFormError("");
+    } catch (error) {
+      console.error(error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: error?.response?.data.message,
+        life: 3000,
+      });
+    }
   };
 
   return (
@@ -255,7 +256,7 @@ const BookAppointment = ({ fromLanding }) => {
                 <option value="">Choose date...</option>
                 {availableDates?.map((date, index) => (
                   <option key={index} value={date.date}>
-                     {new Date(date.date).toLocaleDateString("en-US", {
+                    {new Date(date.date).toLocaleDateString("en-US", {
                       day: "numeric",
                       month: "short",
                       year: "numeric",
@@ -292,17 +293,23 @@ const BookAppointment = ({ fromLanding }) => {
               )}
             </div>
             <div className="mb-3">
-              <label htmlFor="phone" className="form-label"> Phone Number </label>
-               <input type="tel" id="phone" className="form-control"
+              <label htmlFor="phone" className="form-label">
+                {" "}
+                Phone Number{" "}
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                className="form-control"
                 value={formData.phone}
-                 onChange={(e) => setFormData({ ...formData, phone: e.target.value }) } 
-                 />
-                  {formError && !formData.phone && (
-                     <div className="text-danger">
-                      Phone number is required.
-                      </div> 
-                    )}
-                     </div>
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+              />
+              {formError && !formData.phone && (
+                <div className="text-danger">Phone number is required.</div>
+              )}
+            </div>
           </>
         )}
 

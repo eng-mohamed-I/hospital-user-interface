@@ -1,37 +1,36 @@
 import { Link } from "react-router-dom";
 import SocialIcon from "./socialIcon";
 import useAuth from "../hooks/useAuth";
-import { Badge } from 'primereact/badge';
-import { useEffect, useState } from "react"; 
+import { Badge } from "primereact/badge";
+import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+// const socket = io("http://localhost:5000");
 function Header() {
   let { auth, logOut } = useAuth();
   const [hasNewReport, setHasNewReport] = useState(false);
 
   // State to control the visibility of the logout button
   const [showLogout, setShowLogout] = useState(false);
-  
+
   // Handlers for mouse events
   const handleMouseEnter = () => {
     setShowLogout(true);
   };
-  
+
   const handleMouseLeave = () => {
     setShowLogout(false);
   };
 
   useEffect(() => {
     // Listen for the "newReport" event from the server
-    socket.on("newReport", () => {
-      setHasNewReport(true); // Set notification state to true when a new report is added
-    });
-
+    // socket.on("newReport", () => {
+    //   setHasNewReport(true); // Set notification state to true when a new report is added
+    // });
     // Cleanup the event listener on component unmount
-    return () => {
-      socket.off("newReport");
-    };
+    // return () => {
+    //   socket.off("newReport");
+    // };
   }, []);
 
   return (
@@ -57,32 +56,56 @@ function Header() {
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/news" style={{ color: "#222F66" }}>
+                <Link
+                  className="nav-link"
+                  to="/news"
+                  style={{ color: "#222F66" }}
+                >
                   | News & Media
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/doctors" style={{ color: "#222F66" }}>
+                <Link
+                  className="nav-link"
+                  to="/doctors"
+                  style={{ color: "#222F66" }}
+                >
                   | Doctors
                 </Link>
               </li>
               <li className="nav-item">
-              <Link to="specialty" className="nav-link" style={{ color: "#222F66" }}>
-                | Specialties
+                <Link
+                  to="specialty"
+                  className="nav-link"
+                  style={{ color: "#222F66" }}
+                >
+                  | Specialties
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/blogs" style={{ color: "#222F66" }}>
+                <Link
+                  className="nav-link"
+                  to="/blogs"
+                  style={{ color: "#222F66" }}
+                >
                   | Blogs
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/about_Us" style={{ color: "#222F66" }}>
+                <Link
+                  className="nav-link"
+                  to="/about_Us"
+                  style={{ color: "#222F66" }}
+                >
                   | About Us
                 </Link>
               </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/contact_Us" style={{ color: "#222F66" }}>
+                <Link
+                  className="nav-link"
+                  to="/contact_Us"
+                  style={{ color: "#222F66" }}
+                >
                   | Contact
                 </Link>
               </li>
@@ -106,12 +129,14 @@ function Header() {
                     <Link to="/profile" style={profileButton}>
                       <i style={icon} className="fa-solid fa-user p-2"></i>
                       {auth?.user?.data?.name}
-                     
-                    
+
                       {hasNewReport && (
-                          <span title="you have new report" style={notificationDot}>
+                        <span
+                          title="you have new report"
+                          style={notificationDot}
+                        >
                           <Badge value="1" severity="danger"></Badge>
-                          </span>
+                        </span>
                       )}
                     </Link>
                   </div>

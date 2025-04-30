@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import useAuth from "../../../hooks/useAuth";
 import axios from "axios";
-import { apiClient } from "../../../api/api-client.ts";
+import { apiClient } from "../../../api/api-client";
 //======================================================
 const PatientSetting = () => {
   const [email, setEmail] = useState("");

@@ -3,22 +3,22 @@ import { Link, useParams } from "react-router-dom";
 import styles from "./doctor.module.css";
 import OtherDoctors from "./otherDoctors/otherDoctors";
 import MainProfile from "./mainProfile/mainProfile";
-import { getDoctorById } from "../../utilities/api";
-
+import { handleGetDoctor } from "../../services/doctors/doctor-service";
+//====================================================
 const DoctorProfile = () => {
   const { id } = useParams();
   const [doctor, setDoctor] = useState(null);
-  
-  useEffect(() => {
-    const fetchDoctor = async () => {
-      try {
-        const doctorData = await getDoctorById(id);
-        setDoctor(doctorData);
-      } catch (error) {
-        console.error("Error fetching doctor:", error);
-      }
-    };
 
+  const fetchDoctor = async () => {
+    try {
+      const doctorData = await handleGetDoctor(id);
+      setDoctor(doctorData);
+    } catch (error) {
+      console.error("Error fetching doctor:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchDoctor();
   }, [id]);
 
@@ -29,8 +29,12 @@ const DoctorProfile = () => {
       <header className={styles.header}>
         <div className={styles.paths}>
           <div className={styles.pagePath}>
-            <Link className={styles.linkStyle} to={"/"}>Home</Link>
-            <Link className={styles.linkStyle} to={"/doctors"}>&gt;Healthcare Experts</Link>
+            <Link className={styles.linkStyle} to={"/"}>
+              Home
+            </Link>
+            <Link className={styles.linkStyle} to={"/doctors"}>
+              &gt;Healthcare Experts
+            </Link>
             <span className={styles.nowPath}>&gt;Doctor Profile</span>
           </div>
           <h3 className={styles.docNamePath}>{doctor.name}</h3>

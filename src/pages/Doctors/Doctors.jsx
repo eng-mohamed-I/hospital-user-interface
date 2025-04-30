@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import styles from '../doctorProfle/doctor.module.css';
-import DoctorsPageCard from '../../components/DoctorsPageCard';
-import { getAllDoctors } from '../../utilities/api';
-import axios from 'axios';
-
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import styles from "../doctorProfle/doctor.module.css";
+import DoctorsPageCard from "../../components/DoctorsPageCard";
+import { apiClient } from "../../api/api-client";
+import { handleGetDoctors } from "../../services/doctors/doctor-service";
+//=====================================================
 export default function Doctors() {
   const [doctorsData, setDoctorsData] = useState([]);
-  const [departments, setDepartments] = useState([]); 
-  const [specialty, setSpecialty] = useState('');
-  const [gender, setGender] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [departments, setDepartments] = useState([]);
+  const [specialty, setSpecialty] = useState("");
+  const [gender, setGender] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,33 +18,27 @@ export default function Doctors() {
   const [currentPage, setCurrentPage] = useState(1);
   const doctorsPerPage = 9;
 
-  useEffect(() => {
-    async function fetchDoctors() {
-      try {
-        const data = await getAllDoctors();
-        setDoctorsData(data);
-        console.log(data);
-        
-      } catch (err) {
-        setError('Failed to fetch doctors.');
-      } finally {
-        setLoading(false);
-      }
+  async function fetchDoctors() {
+    try {
+      const data = await handleGetDoctors();
+      setDoctorsData(data);
+    } catch (err) {
+      setError("Failed to fetch doctors.");
+    } finally {
+      setLoading(false);
     }
-
-    fetchDoctors();
-  }, []);
+  }
 
   const fetchDepartments = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/departments");
+      const res = await apiClient.get("/departments");
       const allDepartments = res.data?.departments || [];
 
       // Filter departments with available doctors
       const departmentsWithDoctors = await Promise.all(
         allDepartments.map(async (dept) => {
-          const doctorRes = await axios.get(
-            `http://localhost:5000/api/doctors?department=${dept.name}`
+          const doctorRes = await apiClient.get(
+            `/doctors?department=${dept.name}`
           );
           if (doctorRes.data.length > 0) {
             return dept; // Return the department if it has doctors
@@ -61,6 +55,7 @@ export default function Doctors() {
   };
 
   useEffect(() => {
+    fetchDoctors();
     fetchDepartments();
   }, []);
 
@@ -68,14 +63,19 @@ export default function Doctors() {
     return (
       (specialty ? doctor.department?.name === specialty : true) &&
       (gender ? doctor.gender === gender : true) &&
-      (searchTerm ? doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) : true)
+      (searchTerm
+        ? doctor.name.toLowerCase().includes(searchTerm.toLowerCase())
+        : true)
     );
   });
 
   // Pagination logic
   const indexOfLastDoctor = currentPage * doctorsPerPage;
   const indexOfFirstDoctor = indexOfLastDoctor - doctorsPerPage;
-  const currentDoctors = filteredDoctors.slice(indexOfFirstDoctor, indexOfLastDoctor);
+  const currentDoctors = filteredDoctors.slice(
+    indexOfFirstDoctor,
+    indexOfLastDoctor
+  );
 
   const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
 
@@ -97,10 +97,17 @@ export default function Doctors() {
 
   return (
     <>
-      <div className='px-5 py-3' style={{ backgroundColor: "#EEEEEE", color: "#29367D" }}>
+      <div
+        className="px-5 py-3"
+        style={{ backgroundColor: "#EEEEEE", color: "#29367D" }}
+      >
         <div className={styles.pagePath}>
-          <Link className={styles.linkStyle} to={"/"}>Home</Link>
-          <Link className={styles.nowPath} to={"/doctors"}>&gt; Healthcare Experts</Link>
+          <Link className={styles.linkStyle} to={"/"}>
+            Home
+          </Link>
+          <Link className={styles.nowPath} to={"/doctors"}>
+            &gt; Healthcare Experts
+          </Link>
         </div>
         <h5>Doctor Directory / Healthcare Experts</h5>
       </div>
@@ -111,7 +118,7 @@ export default function Doctors() {
             type="text"
             aria-label="Search"
             className=" text-black col"
-            placeholder='Search By Doctor Name...'
+            placeholder="Search By Doctor Name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -121,8 +128,10 @@ export default function Doctors() {
             onChange={(e) => setSpecialty(e.target.value)}
           >
             <option value="">Select Specialty</option>
-            {departments.map(department => (
-              <option key={department._id} value={department.name}>{department.name}</option>
+            {departments.map((department) => (
+              <option key={department._id} value={department.name}>
+                {department.name}
+              </option>
             ))}
           </select>
           <select
@@ -162,32 +171,43 @@ export default function Doctors() {
 
         {/* Ensure that pagination renders if totalPages > 1 */}
         {filteredDoctors.length > 0 && (
-  <nav className="mt-5 d-flex justify-content-center">
-    <ul className="pagination">
-      <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-        <Link to="" className="page-link" onClick={prePage}>
-          Prev
-        </Link>
-      </li>
-      {[...Array(totalPages).keys()].map((n) => (
-        <li
-          className={`page-item ${currentPage === n + 1 ? "active" : ""}`}
-          key={n + 1}
-        >
-          <Link to="" className="page-link text-white" onClick={() => changeCPage(n + 1)}>
-            {n + 1}
-          </Link>
-        </li>
-      ))}
-      <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-        <Link to="" className="page-link" onClick={nextPage}>
-          Next
-        </Link>
-      </li>
-    </ul>
-  </nav>
-)}
-
+          <nav className="mt-5 d-flex justify-content-center">
+            <ul className="pagination">
+              <li
+                className={`page-item ${currentPage === 1 ? "disabled" : ""}`}
+              >
+                <Link to="" className="page-link" onClick={prePage}>
+                  Prev
+                </Link>
+              </li>
+              {[...Array(totalPages).keys()].map((n) => (
+                <li
+                  className={`page-item ${
+                    currentPage === n + 1 ? "active" : ""
+                  }`}
+                  key={n + 1}
+                >
+                  <Link
+                    to=""
+                    className="page-link text-white"
+                    onClick={() => changeCPage(n + 1)}
+                  >
+                    {n + 1}
+                  </Link>
+                </li>
+              ))}
+              <li
+                className={`page-item ${
+                  currentPage === totalPages ? "disabled" : ""
+                }`}
+              >
+                <Link to="" className="page-link" onClick={nextPage}>
+                  Next
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        )}
       </div>
     </>
   );

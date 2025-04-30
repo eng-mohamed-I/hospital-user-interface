@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import useAuth from "../../../hooks/useAuth";
-import { apiClient } from "../../../api/api-client.ts";
+import { apiClient } from "../../../api/api-client";
 //======================================================
 
 const LoginPage = () => {
