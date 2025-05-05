@@ -75,33 +75,41 @@ const BookAppointment = () => {
     try {
       setAvailableDates([]);
       const response = await handleGetDepartmentAvailability(departmentId);
-      setAvailableDates(response.data.availableDates);
+      if (response.data && response.data.availableDates) {
+        setAvailableDates(response.data.availableDates);
+      }
     } catch (error) {
       console.error(error);
     }
   };
 
   const getNextDateOfDay = (day) => {
+    const pad = (num) => num.toString().padStart(2, "0");
     const daysMap = {
-      Sunday: 0,
-      Monday: 1,
-      Tuesday: 2,
-      Wednesday: 3,
-      Thursday: 4,
-      Friday: 5,
-      Saturday: 6,
+      sunday: 0,
+      monday: 1,
+      tuesday: 2,
+      wednesday: 3,
+      thursday: 4,
+      friday: 5,
+      saturday: 6,
     };
+
     const today = new Date();
     const resultDate = new Date(today);
-    resultDate.setDate(
-      today.getDate() + ((7 + daysMap[day] - today.getDay()) % 7 || 7)
-    );
-    return resultDate.toISOString().split("T")[0]; // YYYY-MM-DD
+
+    const delta = (7 + daysMap[day] - today.getDay()) % 7 || 7;
+    resultDate.setDate(today.getDate() + delta);
+
+    const year = resultDate.getFullYear();
+    const month = pad(resultDate.getMonth() + 1);
+    const dayOfMonth = pad(resultDate.getDate());
+
+    return `${year}-${month}-${dayOfMonth}`;
   };
 
   const handleDateChange = (date) => {
     const selectedDate = availableDates.find((d) => d.day === date);
-
     if (selectedDate) {
       const { openTime, closeTime, day } = selectedDate;
       const date = getNextDateOfDay(day);
