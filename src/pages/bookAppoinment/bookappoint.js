@@ -1,67 +1,62 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
 import { Toast } from "primereact/toast";
 import styles from "./BookAppointment.module.css";
 import useAuth from "../../hooks/useAuth";
 import { generateTimeSlots } from "../../utilities/api";
-import { handleGetDoctor } from "../../services/doctors/doctor-service";
-import { handleGetDepartments } from "../../services/department/department-service";
+import {
+  handleGetDepartment,
+  handleGetDepartmentAvailability,
+  handleGetDepartments,
+} from "../../services/department/department-service";
 import { handleMakeAppointment } from "../../services/appointment/appointment-service";
 //========================================================
-const BookAppointment = ({ fromLanding }) => {
+const BookAppointment = () => {
   const { id } = useParams();
-  const [doctor, setDoctor] = useState(null);
-  const [departments, setDepartments] = useState([]);
-  const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [doctors, setDoctors] = useState([]);
   const [availableDates, setAvailableDates] = useState([]);
-  const [timeSlots, setTimeSlots] = useState([]);
+  const [department, setDepartment] = useState();
+  const [departments, setDepartments] = useState([]);
   const [formError, setFormError] = useState("");
   const [formData, setFormData] = useState({
-    doctorId: "",
     department: "",
-    appointmentDate: "",
-    time: "",
-    phone: "",
+    patient: "",
+    day: "",
+    date: "",
+    fromTime: "",
+    toTime: "",
+    notes: "",
   });
 
   const navigate = useNavigate();
   const toast = useRef(null);
   const { auth } = useAuth();
-  const doctorId = id;
 
   useEffect(() => {
-    if (doctorId) {
-      fetchDoctor(doctorId);
+    if (id) {
+      fetchDepartment(id);
+      fetchDepartmentAvailability(id);
     } else {
       fetchDepartments();
     }
-  }, [doctorId]);
+  }, [id]);
 
-  // Fetch doctors when department is selected
   useEffect(() => {
-    if (selectedDepartment) {
-      axios
-        .get(
-          `http://localhost:5000/api/v1/auth/doctors?department=${selectedDepartment}`
-        )
-        .then((res) => setDoctors(res.data))
-        .catch((err) => console.log(err));
+    if (auth?.user?.data?.id) {
+      setFormData((prev) => ({
+        ...prev,
+        patient: auth.user.data.id,
+      }));
     }
-  }, [selectedDepartment]);
+  }, [auth?.user?.data?.id]);
 
-  const fetchDoctor = async (doctorId) => {
+  const fetchDepartment = async (id) => {
     try {
-      const data = await handleGetDoctor(doctorId);
-      const doctorData = data;
-      setDoctor(doctorData);
-      setAvailableDates(doctorData.availableDates);
-      setFormData({
-        ...formData,
-        doctorId: doctorData._id,
-        department: doctorData.department.name,
-      });
+      const response = await handleGetDepartment(id);
+      setDepartment(response.data);
+      setFormData((prev) => ({
+        ...prev,
+        department: response.data._id,
+      }));
     } catch (error) {
       console.error(error);
     }
@@ -69,78 +64,76 @@ const BookAppointment = ({ fromLanding }) => {
 
   const fetchDepartments = async () => {
     try {
-      const data = await handleGetDepartments();
-      const allDepartments = data?.departments;
-      setDepartments(allDepartments);
-
-      // Filter departments with available doctors
-      // const departmentsWithDoctors = await Promise.all(
-      //   allDepartments.map(async (dept) => {
-      //     const doctorRes = await axios.get(
-      //       `http://localhost:5000/api/v1/auth/doctors?department=${dept.name}`
-      //     );
-      //     if (doctorRes.data.length > 0) {
-      //       return dept; // Return the department if it has doctors
-      //     }
-      //     return null; // Return null if it doesn't
-      //   })
-      // );
-
-      // // Set state with valid departments only
-      // setDepartments(departmentsWithDoctors.filter(Boolean));
+      const data = await handleGetDepartments(1, 100);
+      setDepartments(data?.data);
     } catch (error) {
       console.error(error);
     }
   };
 
-  const handleDoctorChange = async (id) => {
+  const fetchDepartmentAvailability = async (departmentId) => {
     try {
-      setFormData({ ...formData, doctorId: id });
-      const data = await handleGetDoctor(id);
-      setDoctor(data);
-      setAvailableDates(data.availableDates);
+      setAvailableDates([]);
+      const response = await handleGetDepartmentAvailability(departmentId);
+      setAvailableDates(response.data.availableDates);
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
+  };
+
+  const getNextDateOfDay = (day) => {
+    const daysMap = {
+      Sunday: 0,
+      Monday: 1,
+      Tuesday: 2,
+      Wednesday: 3,
+      Thursday: 4,
+      Friday: 5,
+      Saturday: 6,
+    };
+    const today = new Date();
+    const resultDate = new Date(today);
+    resultDate.setDate(
+      today.getDate() + ((7 + daysMap[day] - today.getDay()) % 7 || 7)
+    );
+    return resultDate.toISOString().split("T")[0]; // YYYY-MM-DD
   };
 
   const handleDateChange = (date) => {
-    const selectedDate = availableDates.find((d) => d.date === date);
-    if (selectedDate) {
-      const { fromTime, toTime } = selectedDate; // Get fromTime and toTime
-      const start = convertTimeToMinutes(fromTime); // Convert fromTime to minutes
-      const end = convertTimeToMinutes(toTime); // Convert toTime to minutes
-      const slots = generateTimeSlots(start, end, 30); // Generate time slots
-      setTimeSlots(slots);
-      setFormData({ ...formData, appointmentDate: date, time: "" }); // Reset time selection
-    }
-  };
+    const selectedDate = availableDates.find((d) => d.day === date);
 
-  const convertTimeToMinutes = (timeString) => {
-    const [hours, minutes] = timeString.split(":").map(Number);
-    return hours * 60 + minutes; // Convert time to total minutes
+    if (selectedDate) {
+      const { openTime, closeTime, day } = selectedDate;
+      const date = getNextDateOfDay(day);
+      setFormData({
+        ...formData,
+        date,
+        day,
+        fromTime: openTime,
+        toTime: closeTime,
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
-    if (!auth?.user?.data?.email) {
-      navigate("/signin");
-    }
     e.preventDefault();
-    const { doctorId, department, appointmentDate, time } = formData;
+    const { department, toTime, fromTime, day } = formData;
 
-    if (!doctorId || !department || !appointmentDate || !time) {
-      setFormError("All fields are required.");
+    if (!auth?.user?.data?.id) {
+      return navigate("/signin");
+    }
+
+    if (!department || !day || !fromTime || !toTime) {
+      setFormError("All fields are required");
       return;
     }
 
     try {
-      await handleMakeAppointment({
-        doctorID: doctorId,
-        department,
-        date: appointmentDate,
-        time,
-        patientEmail: auth?.user?.data?.email,
-      });
+      // await handleMakeAppointment({
+      //   department,
+      //   date: appointmentDate,
+      //   patientEmail: auth?.user?.data?.email,
+      // });
 
       toast.current.show({
         severity: "success",
@@ -150,20 +143,24 @@ const BookAppointment = ({ fromLanding }) => {
       });
 
       setFormData({
-        doctorId: "",
-        department: "",
-        appointmentDate: "",
-        time: "",
-        phone: "",
+        department,
+        patient: auth.user.data.id,
+        day: "",
+        date: "",
+        fromTime: "",
+        toTime: "",
+        notes: "",
       });
-      
+      console.log(formData);
+
       setFormError("");
     } catch (error) {
       console.error(error);
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: error?.response?.data.message,
+        detail:
+          error?.response?.data.message || "Something went wrong while booking",
         life: 3000,
       });
     }
@@ -172,23 +169,11 @@ const BookAppointment = ({ fromLanding }) => {
   return (
     <div className="container my-5">
       <Toast ref={toast} />
-      {!fromLanding && <h2 className="mb-4">Book Appointment</h2>}
+      <h2 className="mb-4">Book Appointment</h2>
 
-      <form onSubmit={handleSubmit} className={`${styles.formContainer}`}>
-        {/* Check if doctorId exists */}
-        {doctorId ? (
-          <>
-            {/* Display selected doctor information */}
-            {doctor && (
-              <>
-                <h5>Selected Doctor: {doctor.name}</h5>
-                <h6>Department: {doctor.department.name}</h6>{" "}
-                {/* Accessing department name directly */}
-              </>
-            )}
-          </>
-        ) : (
-          // If no doctorId, show department selection
+      <form onSubmit={handleSubmit} className={styles.formContainer}>
+        {/* Department Selection */}
+        {!id ? (
           <div className="mb-3">
             <label htmlFor="department" className="form-label">
               Select Department
@@ -196,131 +181,70 @@ const BookAppointment = ({ fromLanding }) => {
             <select
               id="department"
               className="form-select"
-              value={formData.department}
+              value={formData.department._id}
               onChange={(e) => {
                 setFormData({ ...formData, department: e.target.value });
-                setSelectedDepartment(e.target.value);
+                fetchDepartmentAvailability(e.target.value);
+                console.log(department);
               }}
             >
               <option value="">Choose department...</option>
               {departments?.map((dept, index) => (
-                <option key={index} value={dept.name}>
+                <option key={index} value={dept._id}>
                   {dept.name}
                 </option>
               ))}
             </select>
-            {formError && !formData.department && (
-              <div className="text-danger">Please select a department.</div>
+            {formError && !formData?.department && (
+              <div className="text-danger">Please select a department</div>
             )}
           </div>
-        )}
-
-        {/* If doctorId is not present, show doctor selection */}
-        {!doctorId && selectedDepartment && (
+        ) : (
           <div className="mb-3">
-            <label htmlFor="doctor" className="form-label">
-              Select Doctor
-            </label>
-            <select
-              id="doctor"
-              className="form-select"
-              value={formData.doctorId}
-              onChange={(e) => handleDoctorChange(e.target.value)}
-            >
-              <option value="">Choose doctor...</option>
-              {doctors?.map((doc, index) => (
-                <option key={index} value={doc._id}>
-                  {doc.name}
-                </option>
-              ))}
-            </select>
-            {formError && !formData.doctorId && (
-              <div className="text-danger">Please select a doctor.</div>
-            )}
+            <label className="form-label">Department</label>
+            <input
+              type="text"
+              className="form-control"
+              value={department?.name || ""}
+              readOnly
+            />
           </div>
         )}
 
-        {/* Date and Time Selection */}
-        {(doctor || formData.doctorId) && (
-          <>
-            <div className="mb-3">
-              <label htmlFor="appointmentDate" className="form-label">
-                Select Date
-              </label>
-              <select
-                id="appointmentDate"
-                className="form-select"
-                value={formData.appointmentDate}
-                onChange={(e) => handleDateChange(e.target.value)}
-              >
-                <option value="">Choose date...</option>
-                {availableDates?.map((date, index) => (
-                  <option key={index} value={date.date}>
-                    {new Date(date.date).toLocaleDateString("en-US", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </option>
-                ))}
-              </select>
-              {formError && !formData.appointmentDate && (
-                <div className="text-danger">Please select a date.</div>
-              )}
+        {/* Date Selection */}
+        {availableDates.length > 0 ? (
+          <div className="mb-3">
+            <label className="form-label">Select Date</label>
+            <div className="d-flex flex-wrap gap-2">
+              {availableDates.map((d, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className={`btn btn-outline-primary ${
+                    formData.day === d.day ? "active" : ""
+                  }`}
+                  onClick={() => handleDateChange(d.day)}
+                >
+                  <div> {d.day}</div>
+                  <div>
+                    from: {d.openTime}, to: {d.closeTime}
+                  </div>
+                </button>
+              ))}
             </div>
-
-            <div className="mb-3">
-              <label htmlFor="appointmentTime" className="form-label">
-                Select Time
-              </label>
-              <select
-                id="time"
-                className="form-select"
-                value={formData.time}
-                onChange={(e) =>
-                  setFormData({ ...formData, time: e.target.value })
-                }
-              >
-                <option value="">Choose time...</option>
-                {timeSlots.map((slot, index) => (
-                  <option key={index} value={slot}>
-                    {slot}
-                  </option>
-                ))}
-              </select>
-              {formError && !formData.time && (
-                <div className="text-danger">Please select a time.</div>
-              )}
-            </div>
-            <div className="mb-3">
-              <label htmlFor="phone" className="form-label">
-                {" "}
-                Phone Number{" "}
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                className="form-control"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-              />
-              {formError && !formData.phone && (
-                <div className="text-danger">Phone number is required.</div>
-              )}
-            </div>
-          </>
+          </div>
+        ) : (
+          <div className="p-1">No available dates yet.</div>
         )}
+
+        {formError && <div className="text-danger mb-2">{formError}</div>}
 
         <button type="submit" className="btn btn-primary">
           Book Appointment
         </button>
-
-        {formError && <div className="text-danger mt-3">{formError}</div>}
       </form>
     </div>
   );
 };
-
+//========================================================
 export default BookAppointment;

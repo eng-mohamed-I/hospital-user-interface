@@ -75,11 +75,11 @@ function Header() {
               </li>
               <li className="nav-item">
                 <Link
-                  to="specialty"
+                  to="departments"
                   className="nav-link"
                   style={{ color: "#222F66" }}
                 >
-                  | Specialties
+                  | Departments
                 </Link>
               </li>
               <li className="nav-item">

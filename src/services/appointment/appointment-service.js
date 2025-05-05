@@ -1,10 +1,9 @@
 import {
+  getAppointmentReports,
   getPatientAppointments,
   makeAppointment,
 } from "../../api/appoinment/appointment-api";
-import { getAppointmentReports } from "../../api/report/report-api";
 //=====================================================
-
 export const handleMakeAppointment = async (data) => {
   try {
     const response = await makeAppointment(data);

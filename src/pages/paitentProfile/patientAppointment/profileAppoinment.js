@@ -12,12 +12,28 @@ import { handleGetPatientAppointments } from "../../../services/appointment/appo
 const socket = io("http://localhost:5000");
 
 const ProfileAppointment = () => {
-  const { auth } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [reports, setReports] = useState([]); // State to store all reports
   const [selectedReport, setSelectedReport] = useState(null);
   const [showModal, setShowModal] = useState(false);
+
+  const { auth } = useAuth();
   const toast = React.useRef(null);
+
+  useEffect(() => {
+    fetchAppointments();
+    fetchReports();
+
+    // Listen for real-time report updates
+    socket.on("newReport", (newReport) => {
+      console.log("New report received:", newReport);
+      fetchReports(); // Refresh the reports list when a new report is added
+    });
+
+    return () => {
+      socket.off("newReport");
+    };
+  }, [auth]);
 
   // Fetch appointments associated with the logged-in user
   const fetchAppointments = async () => {
@@ -34,7 +50,9 @@ const ProfileAppointment = () => {
   // Fetch reports associated with appointments
   const fetchReports = async () => {
     try {
-      const response = await axios.get("http://localhost:5000/api/appointments/reports");
+      const response = await axios.get(
+        "http://localhost:5000/api/appointments/reports"
+      );
       setReports(response.data.reports);
       console.log("Reports fetched:", response.data.reports);
     } catch (err) {
@@ -48,21 +66,6 @@ const ProfileAppointment = () => {
       (report) => report.appointmentId._id === appointmentID
     );
   };
-
-  useEffect(() => {
-    fetchAppointments();
-    fetchReports();
-
-    // Listen for real-time report updates
-    socket.on("newReport", (newReport) => {
-      console.log("New report received:", newReport);
-      fetchReports(); // Refresh the reports list when a new report is added
-    });
-
-    return () => {
-      socket.off("newReport");
-    };
-  }, [auth]);
 
   const handleCancelAppointment = async (appointmentID) => {
     try {
@@ -145,7 +148,7 @@ const ProfileAppointment = () => {
   return (
     <div className={styles.container}>
       <Toast ref={toast} />
-      <h2>Your Appointments</h2>
+      <h6>Appointments :</h6>
       <ConfirmDialog />
       <div className={styles.appointmentsScrollContainer}>
         <ul className="list-group">
@@ -235,5 +238,5 @@ const ProfileAppointment = () => {
     </div>
   );
 };
-
+//===========================================
 export default ProfileAppointment;

@@ -38,13 +38,15 @@ import "bootstrap/dist/js/bootstrap.bundle.min";
 import AppointmentList from "./pages/paitentProfile/patientAppointment/profileAppoinment";
 import AccountVerified from "./confirmationEmail/AccountVerified";
 import ScrollToTop from "./reusableComponents/scrollTop";
-
+import Department from "./pages/department/departments";
+import DepartmentProfile from "./pages/department/departmentProfile/departmentProfile";
+//=======================================================
 function AppRoutes() {
   let { authLocalStorage } = useAuth();
   useEffect(() => {
     authLocalStorage();
   }, []);
-  
+
   return (
     <>
       <Header />
@@ -56,7 +58,9 @@ function AppRoutes() {
         <Route path="/resetpassword/:token" element={<ResetPasswordForm />} />
         <Route path="/doctors" element={<Doctors />} />
         <Route path="/doctorprofile/:id" element={<DoctorProfile />} />
-        <Route
+        <Route path="/departments" element={<Department />} />
+        <Route path="/departments/:id" element={<DepartmentProfile />} />
+        <Route  
           path="/profile"
           element={
             <RequireAuth>
